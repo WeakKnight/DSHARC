@@ -1,7 +1,7 @@
 #ifndef DSHARC_TYPES_H
 #define DSHARC_TYPES_H
 
-// DSharc: demand-driven, diffuse world-space radiance caching.
+// DSHARC: demand-driven, diffuse world-space radiance caching.
 // HLSL / DXC, SM 6.6. All positions use the renderer's stable world space.
 // These layouts contain only 32-bit scalars except the separate uint64_t keys.
 

@@ -140,7 +140,7 @@ class App:
     def run_interactive(self):
         mode = spy.WindowMode.minimized if self.options.window_frames else spy.WindowMode.normal
         self.window = spy.Window(width=self.options.width, height=self.options.height,
-            title="DSharc sample | Slang path tracer", resizable=True, mode=mode)
+            title="DSHARC sample | Slang path tracer", resizable=True, mode=mode)
         self.surface = self.device.create_surface(self.window)
         self.surface_format = next((format for format in (spy.Format.rgba8_unorm, spy.Format.bgra8_unorm)
             if format in self.surface.info.formats), None)

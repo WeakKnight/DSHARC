@@ -7,7 +7,7 @@ __pycache__/
 
 # Private reference snapshots and local agent notes are not distributed
 /LumenPT/
-/SHARC/AGENTS.md
+/sample/SHARC/AGENTS.md
 
 # Editor / OS files
 .vs/

@@ -8,11 +8,14 @@ tracing, accumulation and tone mapping passes.
 
 ![Window-lit room rendered by the sample](preview.png)
 
-NVIDIA SHARC is enabled by default, with the original uncached path tracer
-available through `--renderer reference`. Our DSharc is available through
+[NVIDIA SHARC](https://github.com/NVIDIA-RTX/SHARC) is bundled in [`SHARC/`](SHARC/)
+solely as a quality and performance comparison baseline, under its original
+[license](SHARC/License.md). DSHARC's standalone headers do not depend on it.
+SHARC is enabled by default, with the original uncached path tracer
+available through `--renderer reference`. Our DSHARC is available through
 `--renderer dsharc`; the panel has REFERENCE / SHARC / DSHARC buttons.
 See [SHARC integration](SHARC_INTEGRATION.md) and
-[DSharc integration, measured error and cost](DSHARC_INTEGRATION.md).
+[DSHARC integration, measured error and cost](DSHARC_INTEGRATION.md).
 Update-path cache resampling is enabled. Use `compare_low_spp.py` to compare
 32-spp cold/warm SHARC images against uncached PT and a high-spp target.
 
@@ -113,7 +116,7 @@ array for numerical comparisons. A display PNG cannot preserve HDR radiance.
 | `--spp` | 1 | Samples per pixel per frame, 1–64 |
 | `--max-bounces` | 32 | Reference/query scattering cap, 1–32; cache update always traces up to 32 |
 | `--renderer` | `sharc` | `sharc`, `dsharc` or `reference` |
-| `--dsharc-capacity` | 1048576 | DSharc entries; 140 MiB plus path records |
+| `--dsharc-capacity` | 1048576 | DSHARC entries; 140 MiB plus path records |
 | `--dsharc-cell-size` | 0.025 | Smallest cell size in world units |
 | `--dsharc-history` | 256 | Maximum temporal history frames |
 | `--sharc-capacity` | 4194304 | Hash table entries; 160 MiB for the three buffers |
@@ -142,7 +145,7 @@ array for numerical comparisons. A display PNG cannot preserve HDR radiance.
 - **Geometry:** static opaque triangles, flattened into world space, one BLAS
   and one identity-instance TLAS. Ray queries handle both visibility and path hits.
 - **Materials:** two-sided Lambert reflectors with optional emission. The built-in
-  spheres use smooth normals; box edges stay flat. Optional SHARC/DSharc, no denoiser.
+  spheres use smooth normals; box edges stay flat. Optional SHARC/DSHARC, no denoiser.
 - **Sky:** a procedural, direction-dependent zenith/horizon/ground radiance model.
   It illuminates geometry through BSDF-sampled escape rays, including indirect
   paths. It is deliberately a small analytic model, not Nan's atmospheric LUTs;

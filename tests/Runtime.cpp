@@ -275,7 +275,7 @@ int wmain(int argc, wchar_t** argv) {
         gpu.SetLighting(3 * 3.14159265359f); gpu.Shade(1); gpu.Run("GatherCS", 1);
         auto result = gpu.Read<F4>(11, 1)[0]; Require(Near(result.x, 1.75f) && result.w == 1, "Slot reuse inherited old history");
         std::cout << "PASS full table failure, empty dispatch and clean slot reuse\n";
-        std::cout << "All DSharc D3D12 runtime checks passed.\n";
+        std::cout << "All DSHARC D3D12 runtime checks passed.\n";
         return 0;
     } catch (const std::exception& e) {
         std::cerr << "FAIL: " << e.what() << '\n'; return 1;

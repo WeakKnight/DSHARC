@@ -4,7 +4,7 @@ The sample uses the local SHARC 1.8.3.0 SDK without changing its headers. The
 application defaults to SHARC; `--renderer reference` compiles/runs the uncached
 path and does not allocate cache resources. The Python `PathTracer` constructor
 keeps `mode="reference"` for existing library callers/tests. The separate
-`--renderer dsharc` mode is documented in [DSharc integration](DSHARC_INTEGRATION.md).
+`--renderer dsharc` mode is documented in [DSHARC integration](DSHARC_INTEGRATION.md).
 
 ## Passes and storage
 
@@ -201,4 +201,4 @@ backend, including an RGB furnace with analytic `L = E / (1-rho) = 1`, positive
 cache coverage, room-error thresholds, zero-albedo transport and invalidation.
 The local Slang compiler reports an SDK warning about an unset `out radiance`
 on failed lookup; callers only read it when lookup returns true. SDK sources are
-kept intact. DSharc has its own `test_dsharc.py` checks.
+kept intact. DSHARC has its own `test_dsharc.py` checks.

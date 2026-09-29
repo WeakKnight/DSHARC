@@ -24,7 +24,7 @@ def main():
     p.add_argument("--width", type=int, default=480)
     p.add_argument("--height", type=int, default=320)
     p.add_argument("--warmup", type=int, default=256, help="Extra 1-spp SHARC frames; excluded from warm image")
-    p.add_argument("--dsharc", action="store_true", help="Also measure warmed DSharc")
+    p.add_argument("--dsharc", action="store_true", help="Also measure warmed DSHARC")
     p.add_argument("--reference", type=Path, help="Existing matching default-room 32768-spp HDR .npy")
     p.add_argument("--output", type=Path, default=Path(__file__).parent / "output" / "sharc_32spp")
     args = p.parse_args()
@@ -99,7 +99,7 @@ def main():
         for spp in (1, 32):
             rows = [(f"off_{spp}.png", f"Reference PT | {spp} spp"),
                     (f"on_warm_{spp}.png", f"SHARC | {args.warmup} warmup + {spp} spp"),
-                    (f"dsharc_warm_{spp}.png", f"DSharc | {args.warmup} warmup + {spp} spp"),
+                    (f"dsharc_warm_{spp}.png", f"DSHARC | {args.warmup} warmup + {spp} spp"),
                     ("reference_32768.png", "Reference PT | 32768 spp")]
             for i, (filename, label) in enumerate(rows):
                 x, y = (i % 2)*w, (i // 2)*(h+32)

@@ -1,8 +1,8 @@
-# DSharc Integration Guide
+# DSHARC Integration Guide
 
 ## Overview
 
-DSharc moves expensive diffuse-tail shading from individual rendering paths to
+DSHARC moves expensive diffuse-tail shading from individual rendering paths to
 a shared set of world-space cache entries. Its high-level organization is:
 
 1. Trace rendering paths until their footprints make caching appropriate.
@@ -14,11 +14,11 @@ a shared set of world-space cache entries. Its high-level organization is:
 This is a renderer-independent HLSL library. It does not trace the scene, evaluate
 materials, sample light sources, manage GPU memory or submit dispatches.
 
-Unlike SHARC's usual sparse update paths and signal backpropagation, DSharc
+Unlike SHARC's usual sparse update paths and signal backpropagation, DSHARC
 collects requests from the rendering paths themselves and updates unique entries.
 Like LumenPT World Cache, it uses the first requester as a representative and can
 feed cached indirect light back into later updates. Unlike the inspected LumenPT
-shader's in-place lighting access, DSharc explicitly separates previous/current
+shader's in-place lighting access, DSHARC explicitly separates previous/current
 radiance to make this feedback a frame-frozen iteration.
 
 ## Compilation and device requirements
@@ -234,11 +234,11 @@ identity as far as your geometry system permits. A short ray can otherwise hit a
 neighboring sheet or the wrong side of a thin surface.
 
 Alternatively retain renderer-specific primitive/barycentric data in side buffers
-using an appropriately extended request protocol. DSharc itself stores no such ID.
+using an appropriately extended request protocol. DSHARC itself stores no such ID.
 
 Derive an effective diffuse/fully rough albedo and emissive value. LumenPT folds
 its fully rough specular response and some subsurface colors into that effective
-albedo; this renderer-specific conversion is not performed by DSharc.
+albedo; this renderer-specific conversion is not performed by DSHARC.
 
 Call `DSharcStoreMaterial(cache, entry, material)` once for every active entry,
 including on failure with `material.valid = 0`. The function clamps albedo to

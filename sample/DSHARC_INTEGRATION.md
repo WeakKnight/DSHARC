@@ -1,4 +1,4 @@
-# DSharc sample integration and results
+# DSHARC sample integration and results
 
 Run `python sample/entry_point.py --renderer dsharc`. The UI offers REFERENCE,
 SHARC and DSHARC buttons; mode changes invalidate both image and cache history.
@@ -30,7 +30,7 @@ dispatch stays below 65535 groups. All resource strides are checked by reflectio
   preserved on the first escape segment. Update has a 32-event cap.
 - `DSharcEvaluateDiffuseRadiance` applies emission and albedo exactly once.
   The cache stores total outgoing radiance; unlike the SHARC adapter, this
-  baseline does not add material demodulation to the DSharc library contract.
+  baseline does not add material demodulation to the DSHARC library contract.
 - Resolve temporally averages the cell's estimate. Gather adds cached radiance
   times saved throughput. If material/estimate/current radiance is invalid, it
   retraces the original camera sample with cache disabled and replaces the whole
@@ -39,7 +39,7 @@ dispatch stays below 65535 groups. All resource strides are checked by reflectio
 Defaults: capacity 2^20, base cell .025, level distance 2, maximum level 12,
 history 256, stale age 16. The distance bands approximately match the SHARC
 adapter: .025 / .05 / .1 world-unit cells at distances below 4 / 8 / 16.
-DSharc uses six dominant-axis normal bins; SHARC's key uses normal sign bits.
+DSHARC uses six dominant-axis normal bins; SHARC's key uses normal sign bits.
 
 Cache storage is 140 MiB at default capacity plus a 4-byte active counter.
 Suspended paths require **32 bytes × width × height × spp per frame**; e.g.
@@ -55,20 +55,20 @@ at 1 spp/frame, then their image accumulation is reset while cache history is
 preserved. The following error is linear-luminance RMSE divided by the independent
 32768-spp reference's mean luminance (not mean per-pixel relative error).
 
-| Fresh image spp | Reference PT | Warm SHARC | Warm DSharc |
+| Fresh image spp | Reference PT | Warm SHARC | Warm DSHARC |
 | --- | ---: | ---: | ---: |
 | 1 | 161.66% | 129.58% | 123.93% |
 | 32 | 28.62% | 22.55% | 21.65% |
 
-At 1 spp, DSharc reduces RMSE 23.3% versus PT and 4.4% versus SHARC. Luminance
-L1 / reference mean is 82.35% / 55.06% / 47.91%, respectively. At 32 spp, DSharc
+At 1 spp, DSHARC reduces RMSE 23.3% versus PT and 4.4% versus SHARC. Luminance
+L1 / reference mean is 82.35% / 55.06% / 47.91%, respectively. At 32 spp, DSHARC
 reduces RMSE 24.4% versus PT and 4.0% versus SHARC. First-bounce directional
 variance remains visible in both caches. This is one reproducible seed, not a
 multi-seed confidence interval.
 
 Long-convergence comparison: 1024 frames × 32 spp, cold start, 32-bounce reference.
 
-| DSharc vs reference | Result |
+| DSHARC vs reference | Result |
 | --- | ---: |
 | Mean luminance signed difference | +0.0111% |
 | Dark-half mean difference | +0.0854% |
@@ -90,8 +90,8 @@ their own validation; all present materials are diffuse.
 
 ## Work and timing: not an equal-budget win
 
-At warmed 1 spp, DSharc updates about **206000 active cells per frame**, including
-retained cells. SHARC launches only **6144 sparse update paths**. DSharc averages
+At warmed 1 spp, DSHARC updates about **206000 active cells per frame**, including
+retained cells. SHARC launches only **6144 sparse update paths**. DSHARC averages
 `samples_per_frame` lighting samples per active cell so increasing image spp
 also increases update quality/work. Equal warmup frames or image spp is not equal
 work; no equal-time image-quality advantage is claimed.
@@ -105,9 +105,9 @@ not isolated GPU pass timing:
 | --- | ---: |
 | Reference PT | 0.220 |
 | SHARC | 0.345 |
-| DSharc | 0.810 |
+| DSHARC | 0.810 |
 
-The current DSharc integration is about 2.35× the SHARC frame cost here, for a
+The current DSHARC integration is about 2.35× the SHARC frame cost here, for a
 modest lower image error. It is a correctness/quality baseline. Update budgets,
 retained-cell refresh rate, larger grids, material side buffers and compaction
 cost are possible optimization targets, each requiring another bias/cost check.
@@ -140,5 +140,5 @@ cost are possible optimization targets, each requiring another bias/cost check.
 Four new GPU tests pass on D3D12 and Vulkan: RGB furnace energy/feedback, room
 bias/full-hash fallback, empty indirect dispatch, and invalidation/batch/resize/
 mode switching. Original PT and SHARC D3D12 tests also pass after transport
-refactoring. A DSharc three-frame window startup/presentation test passes.
+refactoring. A DSHARC three-frame window startup/presentation test passes.
 PNG and HDR `.npy` outputs plus JSON metrics are in the selected output folders.

@@ -1,4 +1,4 @@
-"""Renderer adapter for the project's demand-driven DSharc headers."""
+"""Renderer adapter for the project's demand-driven DSHARC headers."""
 from dataclasses import dataclass
 import math
 import numpy as np
@@ -15,11 +15,11 @@ class DSharcSettings:
 
     def validate(self):
         if not 1024 <= self.capacity <= 1 << 21 or self.capacity & (self.capacity - 1):
-            raise ValueError("DSharc capacity must be a power of two in [1024, 2^21]")
+            raise ValueError("DSHARC capacity must be a power of two in [1024, 2^21]")
         if not all(math.isfinite(x) and x > 0 for x in (self.cell_size, self.level_distance)):
-            raise ValueError("DSharc cell size and level distance must be finite and positive")
+            raise ValueError("DSHARC cell size and level distance must be finite and positive")
         if not 1 <= self.history <= 1024 or not 0 <= self.stale_frames <= 1024:
-            raise ValueError("DSharc history must be 1..1024 and stale frames 0..1024")
+            raise ValueError("DSHARC history must be 1..1024 and stale frames 0..1024")
 
 
 class DSharcCache:
@@ -40,9 +40,9 @@ class DSharcCache:
             count = 1 if name == "activeCount" else settings.capacity
             b = device.create_buffer(resource_type_layout=self.layout.g_dsharc[name].type_layout,
                 element_count=count, usage=spy.BufferUsage.shader_resource | spy.BufferUsage.unordered_access,
-                label=f"DSharc.{name}")
+                label=f"DSHARC.{name}")
             if b.size != count * stride:
-                raise RuntimeError(f"Unexpected DSharc stride: {name}")
+                raise RuntimeError(f"Unexpected DSHARC stride: {name}")
             self.buffers[name] = b
         self.arguments = device.create_buffer(size=12,
             usage=spy.BufferUsage.unordered_access | spy.BufferUsage.indirect_argument)
@@ -80,7 +80,7 @@ class DSharcCache:
             self.paths = self.device.create_buffer(resource_type_layout=self.layout.g_paths.type_layout,
                 element_count=count, usage=spy.BufferUsage.shader_resource | spy.BufferUsage.unordered_access)
             if self.paths.size != count * 32:
-                raise RuntimeError("Unexpected DSharc path record stride")
+                raise RuntimeError("Unexpected DSHARC path record stride")
             self.path_count = count
         encoder.clear_buffer(self.stats)
         encoder.global_barrier()
