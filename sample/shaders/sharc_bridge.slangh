@@ -1,0 +1,28 @@
+// Local integration policy; NVIDIA SDK headers remain unchanged.
+#define SHARC_ENABLE_RESPONSIVE_LIGHTING 0
+#define SHARC_ENABLE_GLSL 0
+#define SHARC_ENABLE_CACHE_RESAMPLING 1
+#define SHARC_PROPAGATION_DEPTH 4
+#define SHARC_MATERIAL_DEMODULATION 1
+#define SHARC_SEPARATE_EMISSIVE 1
+#define SHARC_SAMPLE_NUM_THRESHOLD 8
+#define SHARC_BLEND_ADJACENT_LEVELS 0
+#include "../../SHARC/include/SharcCommon.h"
+
+uniform SharcParameters g_sharc;
+uniform uint g_cache_frame;
+uniform uint g_cache_history;
+uniform uint g_update_downscale;
+// One element per pixel: successful query, eligible queries, traced segments.
+RWTexture2D<float4> g_cache_stats;
+RWTexture2D<float4> g_update_stats;
+
+SharcHitData cache_hit(Hit hit)
+{
+    SharcHitData result;
+    result.positionWorld = hit.position;
+    result.normalWorld = hit.geometric_normal;
+    result.materialDemodulation = max(hit.albedo, float3(.001));
+    result.emissive = hit.emission;
+    return result;
+}

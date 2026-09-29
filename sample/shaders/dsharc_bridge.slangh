@@ -1,0 +1,28 @@
+#include "../../include/DSharcCommon.h"
+uniform DSharcParameters g_dsharc;
+struct DSharcPathRecord
+{
+    float3 radiance;
+    uint entry;
+    float3 throughput;
+    uint reserved;
+};
+RWStructuredBuffer<DSharcPathRecord> g_paths;
+RWStructuredBuffer<uint> g_dstats;
+RWByteAddressBuffer g_dispatch;
+
+DSharcSurface demand_surface(Hit hit)
+{
+    DSharcSurface result;
+    result.position = hit.position;
+    result.normal = hit.geometric_normal;
+    result.padding0 = result.padding1 = 0;
+    return result;
+}
+
+bool demand_eligible(Hit hit, float3 origin)
+{
+    uint level = DSharcGetLevel(g_dsharc.grid, hit.position);
+    float size = DSharcGetCellSize(g_dsharc.grid, level);
+    return DSharcShouldRequest(length(hit.position - origin), 1.0, size, false);
+}

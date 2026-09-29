@@ -1,0 +1,16 @@
+# Local environments and generated render/test artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+/sample/output/
+
+# Private reference snapshots and local agent notes are not distributed
+/LumenPT/
+/SHARC/AGENTS.md
+
+# Editor / OS files
+.vs/
+.idea/
+.DS_Store
+Thumbs.db
