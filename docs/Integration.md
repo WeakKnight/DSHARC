@@ -33,7 +33,24 @@ The Request pass uses `InterlockedCompareExchange` on a
 atomics on D3D12. For HLSL-to-SPIR-V, use a SPIR-V-enabled DXC with
 `-spirv -fspv-target-env=vulkan1.2`, and enable `shaderInt64` and
 `shaderBufferInt64Atomics` on the device. Match descriptor bindings and structured
-strides to shader reflection. There is no 32-bit-atomic fallback or GLSL API.
+strides to shader reflection. There is no GLSL API.
+
+For Slang/Metal, define `DSHARC_SPLIT_KEY_ATOMICS=1` consistently in every pass
+(automatically selected when `__TARGET_METAL__` or `__METAL__` is defined).
+Select the `metallib_4_0` target capability. The exact key is stored as `uint2`,
+with an additional `RWStructuredBuffer<uint> keyStates` of `N` elements.
+States are 0 (empty), 1 (writing), and 3 (ready). A 32-bit atomic OR claims bit 0;
+only the thread observing 0 writes the key. The writer fences device memory
+before atomically publishing 3, and readers fence after observing 3. Keys are
+immutable throughout Request; deletion occurs only in the preceding Begin pass.
+The fence is a memory fence, not a threadgroup execution barrier.
+
+An unfinished insertion causes the entire request to return invalid, permitting
+renderer PT fallback without spinning or bypassing a possible duplicate key.
+Both search rounds still cross deletion holes. The 32-bit path deliberately uses
+fetch-or rather than relying on Slang's Metal lowering of CAS to weak CAS.
+The sample's local SlangPy build exposes `compiler_options.capabilities` for the
+Metal language selection; the pinned public wheel is not the macOS setup.
 
 `DSHARC_PROBE_COUNT` defaults to 16 and must be identical across all shaders
 accessing a cache. It is a bounded linear-search window, not a maximum load factor.
@@ -46,7 +63,8 @@ usage. Every per-entry buffer, including the active list, has `N` elements.
 
 | `DSharcParameters` member | Element type | Stride | Purpose |
 | --- | --- | ---: | --- |
-| `keys` | `uint64_t` | 8 bytes | Packed cell identity; zero means empty |
+| `keys` | `uint64_t` (`uint2` on Metal) | 8 bytes | Packed cell identity; zero means empty |
+| `keyStates` (Metal only) | `uint` | 4 bytes | Publication state; initialize to zero |
 | `states` | `DSharcEntryState` | 16 bytes | Last demand frame, history count, flags |
 | `surfaces` | `DSharcSurface` | 32 bytes | Representative position and normal |
 | `materials` | `DSharcMaterial` | 32 bytes | Diffuse approximation, emissive, validity |
@@ -60,6 +78,7 @@ The baseline uses **140 bytes per capacity slot**, plus the 4-byte counter,
 indirect arguments and renderer-owned path records. `N = 2^18` costs 35 MiB;
 `2^20` costs 140 MiB. The explicit FP32 storage favors integration clarity over
 packing efficiency. These sizes are not a performance recommendation.
+The Metal path adds 4 bytes per slot: 144 MiB total at `N = 2^20`.
 
 Allocate at least 12 additional bytes for each indirect dispatch argument block.
 Use an aligned byte offset, UAV/storage writes, and indirect-argument read usage.

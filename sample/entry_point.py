@@ -40,7 +40,8 @@ def parse_args(argv=None):
     parser.add_argument("--fov", type=float, default=DEFAULT_FOV, help="Vertical field of view in degrees")
     parser.add_argument("--camera-position", type=float, nargs=3)
     parser.add_argument("--camera-target", type=float, nargs=3)
-    parser.add_argument("--backend", choices=("d3d12", "vulkan"), default="d3d12" if sys.platform == "win32" else "vulkan")
+    parser.add_argument("--backend", choices=("d3d12", "vulkan", "metal"),
+                        default="d3d12" if sys.platform == "win32" else "metal" if sys.platform == "darwin" else "vulkan")
     parser.add_argument("--debug", action="store_true", help="Enable graphics API validation")
     parser.add_argument("--vsync", action="store_true")
     parser.add_argument("--window-frames", type=int, default=0, help=argparse.SUPPRESS)

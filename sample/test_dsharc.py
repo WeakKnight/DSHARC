@@ -106,6 +106,6 @@ class DSharcChecks(unittest.TestCase):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument("--backend", choices=("d3d12", "vulkan"), default="d3d12")
+    p.add_argument("--backend", choices=("d3d12", "vulkan", "metal"), default="d3d12")
     BACKEND = p.parse_args().backend
     unittest.main(argv=[__file__], verbosity=2)

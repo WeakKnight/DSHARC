@@ -50,8 +50,12 @@ class Lighting:
 
 
 def create_device(backend="d3d12", debug=False):
+    compiler_options = {"include_paths": [SHADER_DIR],
+        "defines": {"DSHARC_SPLIT_KEY_ATOMICS": "1" if backend == "metal" else "0"}}
+    if backend == "metal":
+        compiler_options["capabilities"] = ["metallib_4_0"]
     return spy.Device(type=getattr(spy.DeviceType, backend), enable_debug_layers=debug,
-        compiler_options={"include_paths": [SHADER_DIR]})
+        compiler_options=compiler_options)
 
 
 class PathTracer:

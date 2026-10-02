@@ -169,7 +169,7 @@ class GPUChecks(unittest.TestCase):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--backend", choices=("d3d12", "vulkan"), default="d3d12")
+    parser.add_argument("--backend", choices=("d3d12", "vulkan", "metal"), default="d3d12")
     options = parser.parse_args()
     BACKEND = options.backend
     unittest.main(argv=[__file__], verbosity=2)

@@ -71,6 +71,56 @@ uint DSharcNextSlot(uint slot, uint capacity)
     return slot + 1u == capacity ? 0u : slot + 1u;
 }
 
+// Plain key access is legal in host-ordered passes, or after publication below.
+uint64_t DSharcLoadKey(DSharcParameters cache, uint slot)
+{
+#if DSHARC_SPLIT_KEY_ATOMICS
+    uint2 words = cache.keys[slot];
+    return uint64_t(words.x) | (uint64_t(words.y) << 32);
+#else
+    return cache.keys[slot];
+#endif
+}
+
+void DSharcStoreKey(DSharcParameters cache, uint slot, uint64_t key)
+{
+#if DSHARC_SPLIT_KEY_ATOMICS
+    cache.keys[slot] = uint2(uint(key), uint(key >> 32));
+#else
+    cache.keys[slot] = key;
+#endif
+}
+
+#if DSHARC_SPLIT_KEY_ATOMICS
+// Slang's DeviceMemoryBarrier maps to a threadgroup execution barrier on Metal,
+// which is invalid in this divergent path. Use a device-scope memory fence:
+// writes -> fence -> READY; reader observes READY -> fence -> reads.
+[require(metallib_4_0)]
+void DSharcKeyFence()
+{
+    __target_switch
+    {
+    case metal:
+        __intrinsic_asm "atomic_thread_fence(mem_flags::mem_device, memory_order_seq_cst, thread_scope_device)";
+    }
+}
+
+bool DSharcReadPublishedKey(DSharcParameters cache, uint slot, out uint64_t key)
+{
+    uint state;
+    InterlockedOr(cache.keyStates[slot], 0u, state);
+    key = uint64_t(0);
+    if (state == 1u)
+        return false; // Do not bypass an unfinished insertion of this same key.
+    if (state == 3u)
+    {
+        DSharcKeyFence();
+        key = DSharcLoadKey(cache, slot);
+    }
+    return true;
+}
+#endif
+
 // Read-only lookup. Legal only after Request has completed and its UAV writes
 // are visible. Deletion leaves holes, so an empty slot does NOT end the search.
 uint DSharcFindKey(DSharcParameters cache, uint64_t key)
@@ -82,7 +132,7 @@ uint DSharcFindKey(DSharcParameters cache, uint64_t key)
     [loop]
     for (uint i = 0u; i < count; ++i)
     {
-        if (cache.keys[slot] == key)
+        if (DSharcLoadKey(cache, slot) == key)
             return slot;
         slot = DSharcNextSlot(slot, cache.capacity);
     }
@@ -103,7 +153,12 @@ uint DSharcFindOrInsertKey(DSharcParameters cache, uint64_t key)
     for (uint i = 0u; i < count; ++i)
     {
         uint64_t observed;
+#if DSHARC_SPLIT_KEY_ATOMICS
+        if (!DSharcReadPublishedKey(cache, slot, observed))
+            return DSHARC_INVALID_INDEX;
+#else
         InterlockedCompareExchange(cache.keys[slot], uint64_t(0), uint64_t(0), observed);
+#endif
         if (observed == key)
             return slot;
         slot = DSharcNextSlot(slot, cache.capacity);
@@ -114,7 +169,26 @@ uint DSharcFindOrInsertKey(DSharcParameters cache, uint64_t key)
     for (uint j = 0u; j < count; ++j)
     {
         uint64_t observed;
+#if DSHARC_SPLIT_KEY_ATOMICS
+        uint state;
+        // fetch-or claims EMPTY without a weak-CAS spurious-success ambiguity.
+        // WRITING and READY already have bit 0, so their state is unchanged.
+        InterlockedOr(cache.keyStates[slot], 1u, state);
+        if (state == 0u)
+        {
+            DSharcStoreKey(cache, slot, key);
+            DSharcKeyFence();
+            uint ignored;
+            InterlockedExchange(cache.keyStates[slot], 3u, ignored);
+            return slot;
+        }
+        if (state == 1u)
+            return DSHARC_INVALID_INDEX;
+        DSharcKeyFence();
+        observed = DSharcLoadKey(cache, slot);
+#else
         InterlockedCompareExchange(cache.keys[slot], uint64_t(0), key, observed);
+#endif
         if (observed == uint64_t(0) || observed == key)
             return slot;
         slot = DSharcNextSlot(slot, cache.capacity);

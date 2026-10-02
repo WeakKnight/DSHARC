@@ -11,7 +11,10 @@ void DSharcClearEntry(DSharcParameters cache, uint index)
 {
     if (index >= cache.capacity)
         return;
-    cache.keys[index] = uint64_t(0);
+    DSharcStoreKey(cache, index, uint64_t(0));
+#if DSHARC_SPLIT_KEY_ATOMICS
+    cache.keyStates[index] = 0u;
+#endif
     cache.states[index] = (DSharcEntryState)0;
     cache.surfaces[index] = (DSharcSurface)0;
     cache.materials[index] = (DSharcMaterial)0;
@@ -30,7 +33,7 @@ void DSharcResetActiveCount(DSharcParameters cache)
 // not cache-to-cache reads. Old slots are fully reset before any reuse.
 void DSharcBeginFrameEntry(DSharcParameters cache, uint index)
 {
-    if (index >= cache.capacity || cache.keys[index] == uint64_t(0))
+    if (index >= cache.capacity || DSharcLoadKey(cache, index) == uint64_t(0))
         return;
     DSharcEntryState state = cache.states[index];
     if ((cache.frameIndex - state.lastRequestedFrame) > cache.staleFrameCount)
@@ -73,7 +76,7 @@ uint DSharcRequest(DSharcParameters cache, DSharcSurface surface)
 // unrequested entries are also updated, matching the LumenPT working set.
 void DSharcCompactEntry(DSharcParameters cache, uint index)
 {
-    if (index >= cache.capacity || cache.keys[index] == uint64_t(0))
+    if (index >= cache.capacity || DSharcLoadKey(cache, index) == uint64_t(0))
         return;
     uint offset;
     InterlockedAdd(cache.activeCount[0], 1u, offset);
@@ -164,7 +167,7 @@ void DSharcStoreEstimate(DSharcParameters cache, uint index, float3 radiance)
 // Separate previous/current buffers implement a true frame-frozen feedback step.
 void DSharcResolveEntry(DSharcParameters cache, uint index)
 {
-    if (index >= cache.capacity || cache.keys[index] == uint64_t(0))
+    if (index >= cache.capacity || DSharcLoadKey(cache, index) == uint64_t(0))
         return;
     DSharcEntryState state = cache.states[index];
     float4 estimate = cache.estimates[index];

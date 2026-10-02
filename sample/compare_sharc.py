@@ -38,7 +38,7 @@ def metrics(value, reference):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--backend", default="d3d12", choices=("d3d12", "vulkan"))
+    p.add_argument("--backend", default="d3d12", choices=("d3d12", "vulkan", "metal"))
     p.add_argument("--width", type=int, default=320)
     p.add_argument("--height", type=int, default=240)
     p.add_argument("--frames", type=int, default=512)

@@ -35,6 +35,17 @@ These render actual GPU scenes: analytic diffuse/emissive energy, solar MIS,
 shadows, cache coverage, full-table tracing fallback, empty indirect dispatch,
 invalidation, mode switching, resizing and HDR export.
 
+For the [local macOS build](../sample/README.md#local-source-builds-on-macos):
+
+```bash
+PYTHONPATH=../slangpy sample/.venv/bin/python sample/test_dsharc_hash.py --backend metal
+PYTHONPATH=../slangpy sample/.venv/bin/python sample/test_dsharc.py --backend metal
+```
+
+The hash tests execute the actual shared headers on the GPU and check concurrent
+deduplication, preservation of high key bits, lookup/insertion past deletion holes,
+busy-slot fallback, and failure without overwrite when the probe window is full.
+
 For image comparisons and timing:
 
 ```powershell

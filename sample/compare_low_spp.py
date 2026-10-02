@@ -20,7 +20,7 @@ def display(rgb):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--backend", default="d3d12", choices=("d3d12", "vulkan"))
+    p.add_argument("--backend", default="d3d12", choices=("d3d12", "vulkan", "metal"))
     p.add_argument("--width", type=int, default=480)
     p.add_argument("--height", type=int, default=320)
     p.add_argument("--warmup", type=int, default=256, help="Extra 1-spp SHARC frames; excluded from warm image")

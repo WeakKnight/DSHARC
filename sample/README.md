@@ -22,8 +22,9 @@ Update-path cache resampling is enabled. Use `compare_low_spp.py` to compare
 ## Requirements and setup
 
 - Python 3.10 or newer; tested with Python 3.12 and SlangPy 0.43.1.
-- A DXR-capable GPU and current D3D12 drivers on Windows, or a GPU/driver with
-  Vulkan acceleration structures and ray queries.
+- A DXR-capable GPU and current D3D12 drivers on Windows, a GPU/driver with
+  Vulkan acceleration structures and ray queries, or an Apple silicon Mac with
+  ray queries, Metal 4 and the local SlangPy build described below.
 - SHARC additionally uses native float16 storage and 64-bit buffer atomics.
   Slang emits native types for both backends; reflected buffer strides are checked.
   Initialization failure prints the error and falls back to reference PT.
@@ -38,9 +39,47 @@ python -m venv sample/.venv
 ./sample/.venv/Scripts/python.exe sample/entry_point.py
 ```
 
-On Linux, use `sample/.venv/bin/python` and `--backend vulkan`. Only Windows has
-been exercised here. Commands resolve shader paths relative to the sample, so
+On Linux, use `sample/.venv/bin/python` and `--backend vulkan`. Commands resolve shader paths relative to the sample, so
 the process working directory does not need to be `sample/`.
+
+### Local source builds on macOS
+
+The CLI selects Metal on macOS. Reference PT has been rendered and its window
+presentation checked with local sibling `slang`, `slang-rhi`, and `slangpy`
+checkouts. DSHARC also runs on Metal using exact `uint2` keys and an additional
+32-bit slot-state buffer. It requires the local SlangPy `capabilities` compiler
+option to select `metallib_4_0` for device-scope memory fences. D3D12/Vulkan retain
+native 64-bit CAS. SHARC can fall back to reference PT when unsupported.
+
+Until [slang-rhi PR #885](https://github.com/shader-slang/slang-rhi/pull/885) lands,
+use the `codex/metal-acceleration-structure-holes` branch in the local `slang-rhi`
+checkout. It fixes scene replacement leaving null entries in Metal's native
+acceleration-structure array. The local SlangPy build below uses that checkout.
+
+Build the local compiler and configure SlangPy to use both sibling checkouts:
+
+```bash
+python3 -m venv sample/.venv
+sample/.venv/bin/python -m pip install 'numpy>=1.26,<3' 'trimesh>=4.4,<5' 'Pillow>=10,<13'
+cmake -S ../slang -B ../slang/build/metal-local -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF \
+  -DSLANG_ENABLE_SLANG_RHI=OFF -DSLANG_ENABLE_GFX=OFF -DSLANG_ENABLE_SLANGD=OFF \
+  -DSLANG_ENABLE_SLANGI=OFF -DSLANG_ENABLE_DXIL=OFF -DSLANG_SLANG_LLVM_FLAVOR=DISABLE
+cmake --build ../slang/build/metal-local --target slang slangc slang-glslang -j 8
+cmake -S ../slangpy -B ../slangpy/build/local -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DSGL_LOCAL_SLANG=ON \
+  -DSGL_LOCAL_SLANG_DIR="$(cd ../slang && pwd)" \
+  -DSGL_LOCAL_SLANG_BUILD_DIR=build/metal-local/Release \
+  -DSGL_LOCAL_RHI=ON -DSGL_LOCAL_RHI_DIR="$(cd ../slang-rhi && pwd)" \
+  -DSGL_BUILD_TESTS=OFF -DSGL_BUILD_EXAMPLES=OFF \
+  -DPython_EXECUTABLE="$PWD/sample/.venv/bin/python"
+cmake --build ../slangpy/build/local --target slangpy_ext -j 8
+sample/run_local.sh --width 960 --height 640
+```
+
+`run_local.sh` imports the sibling SlangPy source package; set `SLANGPY_LOCAL_DIR`
+to use another checkout. It defaults to DSHARC; use `--renderer reference` for
+uncached PT. For a batch render, add `--headless --frames 64 --spp 4`.
 
 ## Interactive mode
 
@@ -110,7 +149,7 @@ array for numerical comparisons. A display PNG cannot preserve HDR radiance.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--backend` | `d3d12` on Windows | `d3d12` or `vulkan` |
+| `--backend` | Platform-dependent | `d3d12` on Windows, `metal` on macOS, `vulkan` elsewhere |
 | `--width`, `--height` | 960, 640 | Render size |
 | `--frames` | 128 | Number of headless frames |
 | `--spp` | 1 | Samples per pixel per frame, 1–64 |

@@ -2,8 +2,15 @@
 #define DSHARC_TYPES_H
 
 // DSHARC: demand-driven, diffuse world-space radiance caching.
-// HLSL / DXC, SM 6.6. All positions use the renderer's stable world space.
-// These layouts contain only 32-bit scalars except the separate uint64_t keys.
+// HLSL / DXC, SM 6.6, or Slang / Metal 4. Positions use stable world space.
+// Metal stores each exact key as two words and publishes it via a slot state.
+#ifndef DSHARC_SPLIT_KEY_ATOMICS
+#if defined(__METAL__) || defined(__TARGET_METAL__)
+#define DSHARC_SPLIT_KEY_ATOMICS 1
+#else
+#define DSHARC_SPLIT_KEY_ATOMICS 0
+#endif
+#endif
 
 static const uint DSHARC_INVALID_INDEX = 0xffffffffu;
 static const uint DSHARC_FLAG_REQUESTED = 1u;
@@ -65,7 +72,12 @@ struct DSharcParameters
     uint staleFrameCount;     // suggested: 16; < 2^31
     uint maxAccumulatedFrames;// suggested: 32; clamped to at least 1
 
+#if DSHARC_SPLIT_KEY_ATOMICS
+    RWStructuredBuffer<uint2> keys;
+    RWStructuredBuffer<uint> keyStates; // 0 empty, 1 writing, 3 ready
+#else
     RWStructuredBuffer<uint64_t> keys;
+#endif
     RWStructuredBuffer<DSharcEntryState> states;
     RWStructuredBuffer<DSharcSurface> surfaces;
     RWStructuredBuffer<DSharcMaterial> materials;

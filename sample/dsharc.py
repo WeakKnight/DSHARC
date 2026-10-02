@@ -34,9 +34,12 @@ class DSharcCache:
         self.pipelines = {name: device.create_compute_pipeline(p) for name, p in self.programs.items()}
         self.layout = spy.ReflectionCursor(self.programs["request"])
         self.buffers = {}
-        for name, stride in (("keys",8), ("states",16), ("surfaces",32), ("materials",32),
+        resources = [("keys",8), ("states",16), ("surfaces",32), ("materials",32),
             ("previousRadiance",16), ("currentRadiance",16), ("estimates",16),
-            ("activeEntries",4), ("activeCount",4)):
+            ("activeEntries",4), ("activeCount",4)]
+        if device.info.type == spy.DeviceType.metal:
+            resources.append(("keyStates",4))
+        for name, stride in resources:
             count = 1 if name == "activeCount" else settings.capacity
             b = device.create_buffer(resource_type_layout=self.layout.g_dsharc[name].type_layout,
                 element_count=count, usage=spy.BufferUsage.shader_resource | spy.BufferUsage.unordered_access,
